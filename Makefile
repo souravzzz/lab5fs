@@ -1,4 +1,4 @@
-obj-m: lab5fs.o
+obj-m := lab5fs.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
