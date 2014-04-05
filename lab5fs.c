@@ -54,13 +54,13 @@ static struct super_block* lab5fs_get_sb(struct file_system_type *fs_type,
 				   const char *dev_name,
 				   void *data)
 {
-	printk("Mounting lab5fs");
+	printk("Mounting lab5fs\n");
 	return get_sb_single(fs_type, flags, data, lab5fs_fill_super);
 }
 
 static void lab5fs_kill_super(struct super_block *sb)
 {
-	printk("Unmounting lab5fs");
+	printk("Unmounting lab5fs\n");
 	kill_litter_super(sb);
 }
 
