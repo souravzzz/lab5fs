@@ -21,12 +21,12 @@ struct lab5fs_super_block {
 
 struct lab5fs_inode {
 	mode_t mode;
-	uint32_t _ino;
+	uint32_t _inum;
 };
 
 static struct inode* lab5fs_get_inode(struct super_block *sb, int mode, dev_t dev)
 {
-	struct inode * inode = new_inode(sb);
+	struct inode *inode = new_inode(sb);
 
 	if (inode) {
 		inode->i_mode = mode;
@@ -47,6 +47,7 @@ static int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
 
 	printk("Mounting lab5fs\n");
 
+	sb_set_blocksize(sb, LAB5FS_BSIZE);
 	bh = sb_bread(sb, 0);
 	disk_sb = (struct lab5fs_super_block*)bh->b_data;
 
@@ -56,7 +57,7 @@ static int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_blocksize = LAB5FS_BSIZE;
 	sb->s_blocksize_bits = LAB5FS_BITS;
 	sb->s_magic = LAB5FS_MAGIC;
-	sb->s_fs_info = disk_sb;
+	sb->s_fs_info = NULL;
 
 	inode = lab5fs_get_inode(sb, S_IFDIR | 0755, 0);
 	sb->s_root = d_alloc_root(inode);
