@@ -3,26 +3,10 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/buffer_head.h>
-
-#define LAB5FS_MAGIC		0xBADC0DE
-#define LAB5FS_BITS		10
-#define LAB5FS_BSIZE		(1<<LAB5FS_BITS)
-#define LAB5FS_MAX_SIZE		(LAB5FS_BSIZE<<10)
-#define LAB5FS_MAX_OBJS		1024
-#define LAB5FS_MAX_FNAME	16
+#include "lab5fs.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sourav Chakraborty");
-
-struct lab5fs_super_block {
-	uint32_t _magic;
-	uint32_t _free;
-};
-
-struct lab5fs_inode {
-	mode_t mode;
-	uint32_t _inum;
-};
 
 static struct inode* lab5fs_get_inode(struct super_block *sb, int mode, dev_t dev)
 {
