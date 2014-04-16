@@ -35,7 +35,7 @@ static int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
 	bh = sb_bread(sb, 0);
 	disk_sb = (struct lab5fs_super_block*)bh->b_data;
 
-	printk("magic: %zu, free: %zu\n", disk_sb->_magic, disk_sb->_free);
+	printk("magic: %0x, free: %0x\n", disk_sb->_magic, disk_sb->_free);
 
 	sb->s_maxbytes = LAB5FS_MAX_SIZE;
 	sb->s_blocksize = LAB5FS_BSIZE;
@@ -60,6 +60,7 @@ static struct super_block* lab5fs_get_sb(struct file_system_type *fs_type,
 static void lab5fs_kill_sb(struct super_block *sb)
 {
 	printk("Unmounting lab5fs\n");
+	kill_block_super(sb);
 }
 
 struct file_system_type lab5fs_fs_type = {
@@ -85,6 +86,7 @@ static int __init init_lab5fs(void)
 
 static void __exit exit_lab5fs(void)
 {
+	unregister_filesystem(&lab5fs_fs_type);
 	printk("Cleaning up module lab5fs\n");
 }
 

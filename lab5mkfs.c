@@ -14,7 +14,7 @@ int main()
 
 	fd = open("image", O_RDWR);
 	len = write(fd, &sb, sizeof sb);
-	len = write(fd, 0, LAB5FS_BSIZE-len);	
+	len = write(fd, 0, LAB5FS_BSIZE-len);
 	close(fd);
 
 	return 0;
