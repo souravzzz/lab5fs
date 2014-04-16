@@ -2,14 +2,27 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/buffer_head.h>
 
-#define LAB5FS_MAGIC	2441139
-#define LAB5FS_BS_BITS	10
-#define LAB5FS_BS	(1UL<<LAB5FS_BS_BITS)
-#define LAB5FS_MAXSZ	(LAB5FS_BS<<10)
+#define LAB5FS_MAGIC		0xBADC0DE
+#define LAB5FS_BITS		10
+#define LAB5FS_BSIZE		(1<<LAB5FS_BITS)
+#define LAB5FS_MAX_SIZE		(LAB5FS_BSIZE<<10)
+#define LAB5FS_MAX_OBJS		1024
+#define LAB5FS_MAX_FNAME	16
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sourav Chakraborty");
+
+struct lab5fs_super_block {
+	uint32_t _magic;
+	uint32_t _free;
+};
+
+struct lab5fs_inode {
+	mode_t mode;
+	uint32_t _ino;
+};
 
 static struct inode* lab5fs_get_inode(struct super_block *sb, int mode, dev_t dev)
 {
@@ -19,7 +32,7 @@ static struct inode* lab5fs_get_inode(struct super_block *sb, int mode, dev_t de
 		inode->i_mode = mode;
 		inode->i_uid = current->fsuid;
 		inode->i_gid = current->fsgid;
-		inode->i_blksize = LAB5FS_BS;
+		inode->i_blksize = LAB5FS_BSIZE;
 		inode->i_blocks = 0;
 		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
 	}
@@ -28,25 +41,27 @@ static struct inode* lab5fs_get_inode(struct super_block *sb, int mode, dev_t de
 
 static int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
 {
-	struct inode * inode;
-	struct dentry * root;
+	struct buffer_head *bh;
+	struct lab5fs_super_block *disk_sb;
+	struct inode *inode;
 
-	sb->s_maxbytes = LAB5FS_MAXSZ;
-	sb->s_blocksize = LAB5FS_BS;
-	sb->s_blocksize_bits = LAB5FS_BS_BITS;
+	printk("Mounting lab5fs\n");
+
+	bh = sb_bread(sb, 0);
+	disk_sb = (struct lab5fs_super_block*)bh->b_data;
+
+	printk("magic: %zu, free: %zu\n", disk_sb->_magic, disk_sb->_free);
+
+	sb->s_maxbytes = LAB5FS_MAX_SIZE;
+	sb->s_blocksize = LAB5FS_BSIZE;
+	sb->s_blocksize_bits = LAB5FS_BITS;
 	sb->s_magic = LAB5FS_MAGIC;
+	sb->s_fs_info = disk_sb;
+
 	inode = lab5fs_get_inode(sb, S_IFDIR | 0755, 0);
-	if (!inode)
-		return -EFAULT;
+	sb->s_root = d_alloc_root(inode);
 
-	root = d_alloc_root(inode);
-	if (!root) {
-		iput(inode);
-		return -EFAULT;
-	}
-	sb->s_root = root;
 	return 0;
-
 }
 
 static struct super_block* lab5fs_get_sb(struct file_system_type *fs_type,
@@ -54,14 +69,12 @@ static struct super_block* lab5fs_get_sb(struct file_system_type *fs_type,
 				   const char *dev_name,
 				   void *data)
 {
-	printk("Mounting lab5fs\n");
-	return get_sb_single(fs_type, flags, data, lab5fs_fill_super);
+	return get_sb_bdev(fs_type, flags, dev_name, data, lab5fs_fill_super);
 }
 
-static void lab5fs_kill_super(struct super_block *sb)
+static void lab5fs_kill_sb(struct super_block *sb)
 {
 	printk("Unmounting lab5fs\n");
-	kill_litter_super(sb);
 }
 
 struct file_system_type lab5fs_fs_type = {
@@ -69,7 +82,7 @@ struct file_system_type lab5fs_fs_type = {
 	.name = "lab5fs",
 	.fs_flags = FS_REQUIRES_DEV,
 	.get_sb = lab5fs_get_sb,
-	.kill_sb = lab5fs_kill_super
+	.kill_sb = lab5fs_kill_sb
 };
 
 static int __init init_lab5fs(void)
