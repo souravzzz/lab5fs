@@ -5,18 +5,32 @@
 #include <linux/errno.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#include <linux/statfs.h>
 #include "lab5fs.h"
 #include "lab5fs_super.h"
 #include "lab5fs_inode.h"
 
 /* inode operations go here*/
-struct inode_operations inode_ops;
+struct inode_operations lab5fs_inode_ops = {
+};
 
 /* file operations go here*/
-struct file_operations file_ops;
+struct file_operations lab5fs_file_ops = {
+	llseek:generic_file_llseek,
+	read:  generic_file_read,
+	write: generic_file_write,
+	mmap:  generic_file_mmap,
+	open:  generic_file_open,
+};
+
+/* dir operations go her */
+struct file_operations lab5fs_dir_ops = {
+	readdir: lab5fs_readdir
+};
 
 /* address operations go here*/
-struct address_space_operations address_ops;
+struct address_space_operations lab5fs_address_ops = {
+};
 
 /*Read inode data from a block on disk and fill out a VFS inode*/
 int lab5fs_inode_read_ino(struct inode *ino, unsigned long block_num){
@@ -57,7 +71,7 @@ int lab5fs_inode_read_ino(struct inode *ino, unsigned long block_num){
         ino->i_nlink = le16_to_cpu(lab5fs_ino->i_link_count);
         ino->i_size = le32_to_cpu(lab5fs_ino->i_size);
         ino->i_blksize = LAB5FS_BLOCK_SIZE;
-        ino->i_blkbits = 10;
+        ino->i_blkbits = LAB5FS_BITS;
         ino->i_blocks = le32_to_cpu(lab5fs_ino->i_num_blocks);
         ino->i_uid = le32_to_cpu(lab5fs_ino->i_uid);
         ino->i_gid = le32_to_cpu(lab5fs_ino->i_gid);
@@ -68,9 +82,9 @@ int lab5fs_inode_read_ino(struct inode *ino, unsigned long block_num){
 
         /* set the inode operations structs  */
         /* TODO: Implement actual operations */
-        ino->i_op = &inode_ops;
-        ino->i_fop = &file_ops;
-        ino->i_mapping->a_ops = &address_ops;
+        ino->i_op = &lab5fs_inode_ops;
+        ino->i_fop = &lab5fs_file_ops;
+        ino->i_mapping->a_ops = &lab5fs_address_ops;
 
         printk(    "Inode %ld: i_mode=%o, i_nlink=%d, "
                    "i_uid=%d, i_gid=%d\n",
@@ -89,4 +103,28 @@ void lab5fs_inode_clear(struct inode *ino){
 	struct lab5fs_inode_info *inode_info = LAB5FS_INODE_INFO(ino);
 	kfree(inode_info);
 	ino->u.generic_ip = NULL;
+}
+
+/* List a directory's files */
+int lab5fs_readdir(struct file *filep, void *dirent, filldir_t filldir) {
+	struct dentry *dentry = filep->f_dentry;
+	struct inode *inode = dentry->d_inode;
+	struct super_block *sb = inode->i_sb;
+	struct buffer_head *bh = NULL;
+	int err = 0;
+
+	if(filep->f_pos == 0) {
+		filldir(dirent, ".", 1, filep->f_pos, inode->i_ino, DT_DIR);
+		filep->f_pos++;
+	}
+
+	if(filep->f_pos == 1) {
+		filldir(dirent, "..", 2, filep->f_pos, dentry->d_parent->d_inode->i_ino, DT_DIR);
+		filep->f_pos++;
+	}
+
+out:
+	if(bh)
+		brelse(bh);
+	return err;
 }
