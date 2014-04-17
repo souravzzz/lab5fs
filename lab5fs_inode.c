@@ -12,6 +12,7 @@
 
 /* inode operations go here*/
 struct inode_operations lab5fs_inode_ops = {
+	lookup: lab5fs_lookup,
 };
 
 /* file operations go here*/
@@ -25,7 +26,7 @@ struct file_operations lab5fs_file_ops = {
 
 /* dir operations go her */
 struct file_operations lab5fs_dir_ops = {
-	readdir: lab5fs_readdir
+	readdir: lab5fs_readdir,
 };
 
 /* address operations go here*/
@@ -81,8 +82,9 @@ int lab5fs_inode_read_ino(struct inode *ino, unsigned long block_num){
         ino->u.generic_ip = inode_meta;
 
         /* set the inode operations structs  */
-        /* TODO: Implement actual operations */
         ino->i_op = &lab5fs_inode_ops;
+        /* TODO: switch based on type */
+        /* ino->i_fop = &lab5fs_file_ops; */
         ino->i_fop = &lab5fs_file_ops;
         ino->i_mapping->a_ops = &lab5fs_address_ops;
 
@@ -105,13 +107,65 @@ void lab5fs_inode_clear(struct inode *ino){
 	ino->u.generic_ip = NULL;
 }
 
+int lab5fs_getblock(struct inode *dir, int *blocknum) {
+	int err = 0;
+	struct super_block *sb = dir->i_sb;
+	struct buffer_head *bh = NULL;
+	struct lab5fs_inode_info *info = LAB5FS_INODE_INFO(dir);
+	struct lab5fs_inode_data_index *data;
+
+	bh = __bread(sb->s_bdev, info->i_bi_block_num, LAB5FS_BLOCK_SIZE);
+	data = (struct lab5fs_inode_data_index *)bh->b_data;
+	*blocknum = (int)(data->blocks[0]);
+out:
+	if(bh)
+		brelse(bh);
+	return err;
+}
+
+int lab5fs_getfile(struct inode *dir, const char *name, int len, ino_t *ino) {
+	int err = 0;
+	struct super_block *sb = dir->i_sb;
+	struct buffer_head *bh = NULL;
+	struct lab5fs_dir *drec = NULL;
+	int blocknum;
+
+	printk("lab5fs_getfile:: name: %s, len: %d\n", name, len);
+	err = lab5fs_getblock(dir, &blocknum);
+	if(!err) {
+		bh = __bread(sb->s_bdev, blocknum, LAB5FS_BLOCK_SIZE);
+		drec = (struct lab5fs_dir*)bh->b_data;
+		*ino = drec->dir_inode;
+	}
+
+out:
+	if(bh)
+		brelse(bh);
+	return err;
+}
+
+/* Needed for ls */
+struct dentry* lab5fs_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *data) {
+	int err = 0;
+	struct inode *inode = NULL;
+	ino_t ino;
+
+	printk("lab5fs_lookup:: name: %s, len: %d\n", dentry->d_name.name, dentry->d_name.len);
+	err = lab5fs_getfile(dir, dentry->d_name.name, dentry->d_name.len, &ino);
+	if(!err && ino>0) {
+		inode = iget(dir->i_sb, ino);
+		d_add(dentry, inode);
+	}
+	return dentry;
+}
+
 /* List a directory's files */
 int lab5fs_readdir(struct file *filep, void *dirent, filldir_t filldir) {
+	int err = 0;
 	struct dentry *dentry = filep->f_dentry;
 	struct inode *inode = dentry->d_inode;
 	struct super_block *sb = inode->i_sb;
 	struct buffer_head *bh = NULL;
-	int err = 0;
 
 	if(filep->f_pos == 0) {
 		filldir(dirent, ".", 1, filep->f_pos, inode->i_ino, DT_DIR);
