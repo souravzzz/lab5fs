@@ -12,23 +12,23 @@
 
 /* inode operations go here*/
 struct inode_operations lab5fs_inode_ops = {
-lookup: lab5fs_lookup,
+	lookup: lab5fs_lookup,
 	create: lab5fs_inode_create,
 	unlink: lab5fs_inode_unlink,
 };
 
 /* file operations go here*/
 struct file_operations lab5fs_file_ops = {
-	//llseek:generic_file_llseek,
-	//read:  generic_file_read,
-	//write: generic_file_write,
-	//mmap:  generic_file_mmap,
-	//open:  generic_file_open,
+	llseek:generic_file_llseek,
+	read:  generic_file_read,
+	write: generic_file_write,
+	mmap:  generic_file_mmap,
+	open:  generic_file_open,
 };
 
 /* dir operations go her */
 struct file_operations lab5fs_dir_ops = {
-readdir: lab5fs_readdir,
+	readdir: lab5fs_readdir,
 };
 
 /* address operations go here*/
@@ -640,7 +640,6 @@ int lab5fs_inode_create(struct inode *dir, struct dentry *dentry, int mode,struc
 	return err;
 }
 
-
 /*
  * Unlink the inode given by the dentry pointer from the given directory  
  */
@@ -666,7 +665,6 @@ int lab5fs_inode_unlink(struct inode *dir, struct dentry *dentry)
 	printk("parent_i_nlink=%d, child_i_nlink=%d\n",
 			dir->i_nlink, child->i_nlink);
 
-	err = 0;
 	return err;
 }
 

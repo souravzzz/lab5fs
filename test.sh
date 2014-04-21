@@ -4,6 +4,7 @@ set -x
 insmod lab5fs_mod.ko
 mount -o loop -t lab5fs image /mnt/
 cd /mnt
+ls
 touch x
 touch y
 touch z

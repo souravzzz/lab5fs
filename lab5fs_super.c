@@ -269,7 +269,7 @@ int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
 	sb_set_blocksize(sb, LAB5FS_BLOCK_SIZE);
 	bh = sb_bread(sb, 0);
 	disk_sb = (struct lab5fs_super_block*)bh->b_data;
-	printk("magic: %0x, free: %0x\n", disk_sb->s_magic, disk_sb->s_free_blocks_count);
+	printk("magic: %0x, blocks: %0x\n", disk_sb->s_magic, disk_sb->s_free_blocks_count);
 
 	if(!(bb_bh = sb_bread(sb, LAB5FS_BLOCK_BITMAP_NUM))){
 		printk("Unable to read block bitmap\n");

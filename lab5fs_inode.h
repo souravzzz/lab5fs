@@ -26,5 +26,6 @@ struct dentry* lab5fs_lookup(struct inode *dir, struct dentry *dentry, struct na
 int lab5fs_inode_create(struct inode *, struct dentry *,int,struct nameidata *);
 int lab5fs_inode_unlink(struct inode *dir, struct dentry *dentry);
 int lab5fs_readdir(struct file *filep, void *dirent, filldir_t fill);
+int lab5fs_file_fsync(struct file *filep, struct dentry *dentry, int sync);
 
 #endif /* LAB5FS_INODE_H */
