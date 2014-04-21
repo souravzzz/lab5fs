@@ -10,13 +10,16 @@
 #define LAB5FS_ROOT_INODE_NUM 4
 #define LAB5FS_ROOT_DATA_INDEX_NUM 5
 #define LAB5FS_ROOT_DATA_FIRST_NUM 6
+//set root inode number to 1. Reserve inode number 0 for null
+#define LAB5FS_ROOT_INODE 1
 
 #define LAB5FS_BLOCK_SIZE 1024
 #define LAB5FS_BITS	10
 #define LAB5FS_MAX_SIZE LAB5FS_BLOCK_SIZE*LAB5FS_BLOCK_SIZE/4
-#define LAB5FS_MAX_INODE_COUNT 1<<31
-#define LAB5FS_MAX_BLOCK_COUNT 1024
+#define LAB5FS_MAX_INODE_COUNT 1024*8
+#define LAB5FS_MAX_BLOCK_COUNT 1024*8
 #define LAB5FS_MAX_FNAME 16
+#define LAB5FS_MAX_BLOCK_INDEX 256
 
 #include <linux/types.h>
 struct lab5fs_super_block {
@@ -47,7 +50,7 @@ struct lab5fs_dir {
     uint32_t dir_inode;
     uint8_t dir_name_len;
     uint8_t dir_file_type;
-    char dir_name[16];
+    char dir_name[LAB5FS_MAX_FNAME];
 };
 
 struct lab5fs_bitmap {
@@ -59,7 +62,7 @@ struct lab5fs_inode_table {
 };
 
 struct lab5fs_inode_data_index { /*Data index block. Basically just an array of block numbers*/
-    uint32_t blocks[256];
+    uint32_t blocks[LAB5FS_MAX_BLOCK_INDEX];
 };
 
 

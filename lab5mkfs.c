@@ -78,9 +78,9 @@ int write_block_bitmap(const char* dev_path, int fd)
 	struct lab5fs_bitmap block_bitmap;
 	int rc;
 
-	/* everything should be zero, except for the first 6 bits*/
+	/* everything should be zero, except for the first 7 bits*/
 	memset(&block_bitmap, 0, sizeof(block_bitmap));
-	block_bitmap.map[0] = 0x3F; /*set the first 6 bits to 1*/
+	block_bitmap.map[0] = 0x7F; /*set the first 7 bits to 1*/
 
 	/* write to inode block bitmap (block 1). */
 	rc = write_block(dev_path, fd, "block bitmap",
@@ -95,9 +95,11 @@ int write_inode_bitmap(const char* dev_path, int fd)
 	struct lab5fs_bitmap inode_bitmap;
 	int rc;
 
-	/* everything should be zero, except for the first inode (maps to root)*/
+	/* everything should be zero, except for the first inode (maps null)
+	 * and second inode (maps to root)
+	*/
 	memset(&inode_bitmap, 0, sizeof(inode_bitmap));
-	inode_bitmap.map[0] = 0x1; /*set the first inode bit to 1*/
+	inode_bitmap.map[0] = 0x3; /*set the first and second inode bit to 1*/
 
 	/* write to inode bitmap block (block 2). */
 	rc = write_block(dev_path, fd, "inode bitmap",
@@ -116,7 +118,7 @@ int write_inode_table(const char* dev_path,int fd)
 	memset(&table, 0, sizeof(table));
 
 	/*point inode #0 to the root inode block*/
-	table.inodes[0]=LAB5FS_ROOT_INODE_NUM;
+	table.inodes[LAB5FS_ROOT_INODE]=LAB5FS_ROOT_INODE_NUM;
 	/*write to inode table block (block 3)*/
 	rc = write_block(dev_path, fd, "inode table",
 			LAB5FS_INODE_TABLE_NUM,
@@ -135,7 +137,7 @@ int write_root_inode(const char* dev_path, int fd)
 	root_inode.i_mode = S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 	root_inode.i_uid = 0;
 	root_inode.i_gid = 0;
-	root_inode.i_size = LAB5FS_BLOCK_SIZE;
+	root_inode.i_size = 0;
 	root_inode.i_atime = 0;
 	root_inode.i_mtime = 0;
 	root_inode.i_ctime = 0;
