@@ -11,22 +11,21 @@
 /*MACRO for accessing the superblock info pointer*/
 #define LAB5FS_SB_INFO(sb) ((struct lab5fs_sb_info*)((sb)->s_fs_info))
 
-/*function prototypes for super block operations*/
+/* function prototypes for super block operations */
 void lab5fs_read_inode (struct inode *);
 void lab5fs_clear_inode (struct inode *);
 void lab5fs_put_super (struct super_block *);
 void lab5fs_write_super (struct super_block *sb);
-void lab5fs_write_inode(struct inode *ino, int sync);
+int  lab5fs_write_inode(struct inode *ino, int sync);
 void lab5fs_delete_inode (struct inode *ino);
 
-/*Note: still need to actually implement these functions*/
 struct super_operations lab5fs_super_ops ={
-read_inode: lab5fs_read_inode,
-	    write_inode: lab5fs_write_inode,
-	    clear_inode: lab5fs_clear_inode,
-	    delete_inode: lab5fs_delete_inode,
-	    put_super: lab5fs_put_super,
-	    write_super: lab5fs_write_super,
+	read_inode: lab5fs_read_inode,
+	write_inode: lab5fs_write_inode,
+	clear_inode: lab5fs_clear_inode,
+	delete_inode: lab5fs_delete_inode,
+	put_super: lab5fs_put_super,
+	write_super: lab5fs_write_super,
 };
 
 /* Store custom metadata about filesystem*/
@@ -49,7 +48,7 @@ struct lab5fs_sb_info {
 };
 
 
-/*Locate the block number of an inode given its inode number*/
+/* Locate the block number of an inode given its inode number */
 unsigned long lab5fs_find_block_num(struct inode *ino)
 {
 	unsigned long ino_num = ino->i_ino;
@@ -67,9 +66,6 @@ unsigned long lab5fs_find_block_num(struct inode *ino)
 
 	return block_num;
 }
-
-
-
 
 /*
  * Allocates a free block number.
@@ -93,7 +89,7 @@ int lab5fs_alloc_block_num(struct super_block *sb)
 		goto ret;
 	}
 
-	/*go to bitmap for first free block*/
+	/* go to bitmap for first free block */
 	block_num = find_first_zero_bit((unsigned long*)(block_bitmap->map),LAB5FS_MAX_BLOCK_COUNT);
 	if(block_num >= LAB5FS_MAX_BLOCK_COUNT || block_num<=LAB5FS_ROOT_DATA_FIRST_NUM){
 		printk("Error: Could not find free block. Block num=%d.\n",block_num);
@@ -113,7 +109,6 @@ ret:
 	return block_num;
 }
 
-
 /*
  * Frees a previously allocated block number.
  * returns 0 on success, a negative error code on failure.
@@ -130,16 +125,14 @@ int lab5fs_release_block_num(struct super_block *sb, int block_num)
 
 	/* Prevent freeing any of the low number blocks. */
 	if (block_num <= LAB5FS_ROOT_DATA_FIRST_NUM) {
-		printk("trying to free at or below "
-				"mandatory block %d\n",
+		printk("trying to free at or below mandatory block %d\n",
 				LAB5FS_ROOT_DATA_FIRST_NUM);
 		return -1;
 	}
 
 	/*check block number is less than max block number*/
 	if(block_num >= LAB5FS_MAX_BLOCK_COUNT){
-		printk("trying to free a block with block number" 
-				"greater than maximum block number %d\n",
+		printk("trying to free a block with block number greater than maximum block number %d\n",
 				LAB5FS_MAX_BLOCK_COUNT);
 		return -1;
 	}
@@ -160,7 +153,6 @@ int lab5fs_release_block_num(struct super_block *sb, int block_num)
 
 	return 0;
 }
-
 
 /*
  * Allocates a free inode number and creates an entry for it in the inode table.
@@ -236,8 +228,7 @@ int lab5fs_release_inode_num(struct super_block *sb, int inode_num)
 
 	/*check block number is less than max block number*/
 	if(inode_num >= LAB5FS_MAX_INODE_COUNT){
-		printk("trying to free a inode with inode number" 
-				"greater than max inode number %d\n",
+		printk("trying to free a inode with inode number greater than max inode number %d\n",
 				LAB5FS_MAX_INODE_COUNT);
 		return -1;
 	}
@@ -261,8 +252,6 @@ int lab5fs_release_inode_num(struct super_block *sb, int inode_num)
 
 	return 0;
 }
-
-
 
 /* Fill in vfs superblock from lab5fs image*/
 int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
@@ -327,6 +316,7 @@ int lab5fs_fill_super(struct super_block *sb, void *data, int silent)
 	return 0;
 }
 
+/* Read Inode from disk */
 void lab5fs_read_inode (struct inode *ino)
 {
 	unsigned long block_num = 0;
@@ -338,8 +328,9 @@ void lab5fs_read_inode (struct inode *ino)
 	lab5fs_inode_read_ino(ino, block_num); /*function defined in lab5fs_inode.c*/
 }
 
-/*Free bufferheads and release memory*/
-void lab5fs_put_super(struct super_block *sb){
+/* Free bufferheads and release memory */
+void lab5fs_put_super(struct super_block *sb)
+{
 	struct lab5fs_sb_info *sb_info = LAB5FS_SB_INFO(sb);
 	printk("Releasing VFS super block\n");
 	brelse(sb_info->s_sbh);
@@ -350,11 +341,11 @@ void lab5fs_put_super(struct super_block *sb){
 	sb->s_fs_info = NULL;
 }
 
-/*Write Inode to on-disk*/
-void lab5fs_write_inode(struct inode *ino,int sync)
+/* Write Inode to on-disk */
+int lab5fs_write_inode(struct inode *ino, int sync)
 {
 	printk("writing inode %ld to disk\n", ino->i_ino);
-	lab5fs_inode_write_ino (ino);
+	return lab5fs_inode_write_ino (ino);
 }
 
 /*Delete inode from VFS and disk*/
@@ -379,8 +370,9 @@ void lab5fs_delete_inode (struct inode *ino)
 	clear_inode(ino);
 }
 
-/*Release an inode and clear memory used by inode*/
-void lab5fs_clear_inode (struct inode * ino){
+/* Release an inode and clear memory used by inode */
+void lab5fs_clear_inode (struct inode * ino)
+{
 	printk("Releasing inode #%ld from VFS\n",ino->i_ino);
 	lab5fs_inode_clear(ino); /*function defined in lab5fs_inode.c*/
 }

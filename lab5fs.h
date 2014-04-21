@@ -29,7 +29,6 @@ struct lab5fs_super_block {
 	uint32_t s_free_blocks_count; /*number of available blocks*/
 	uint32_t s_free_inodes_count; /*number of available inodes*/
 	uint32_t s_block_size; /*size of each block*/
-	char s_volume_name[16]; //Volume name
 };
 
 struct lab5fs_inode {
