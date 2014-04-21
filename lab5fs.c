@@ -12,9 +12,9 @@ MODULE_AUTHOR("Sourav Chakraborty");
 
 
 static struct super_block* lab5fs_get_sb(struct file_system_type *fs_type,
-				   int flags,
-				   const char *dev_name,
-				   void *data)
+		int flags,
+		const char *dev_name,
+		void *data)
 {
 	return get_sb_bdev(fs_type, flags, dev_name, data, lab5fs_fill_super);
 }

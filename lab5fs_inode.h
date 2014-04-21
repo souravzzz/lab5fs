@@ -7,8 +7,8 @@
 
 /* custom lab5fs meta-data inside each VFS inode. */
 struct lab5fs_inode_info {
-        unsigned long  i_block_num;     /* block containing the inode.               */
-       	unsigned long  i_bi_block_num;  /* block containing the inode's data index.  */
+	unsigned long  i_block_num;     /* block containing the inode.               */
+	unsigned long  i_bi_block_num;  /* block containing the inode's data index.  */
 };
 
 /* Macro for getting lab5fs inode meta-data from a VFS inode. */
